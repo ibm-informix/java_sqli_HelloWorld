@@ -56,7 +56,7 @@ Gradle -  Used to get dependencies.
  
  * Step 3: Download driver
  
-SQLI Download -> https://www-01.ibm.com/marketing/iwm/tnd/search.jsp?go=y&rs=ifxjdbc
+[Informix JDBC driver (SQLI) Download](https://www-01.ibm.com/marketing/iwm/tnd/search.jsp?go=y&rs=ifxjdbc)
 
  * Step 4: Use gradle to copy runtime dependencies
 
