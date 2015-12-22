@@ -1,10 +1,10 @@
 package com.ibm.informix;
 
-/*-
- * Java Sample Application: Connection to Informix using SQLI
- */
+/**
+ * Java Sample Application: Connect to Informix using the SQLI protocol and the Informix JDBC driver
+ **/
 
-/*-
+/**
  * Topics
  * 1 Create table
  * 2 Inserts
@@ -17,7 +17,7 @@ package com.ibm.informix;
  * 4 Update documents in a table
  * 5 Delete documents in a table
  * 6 Drop a table
- */
+ **/
 
 import java.io.StringReader;
 import java.sql.Connection;
@@ -36,43 +36,46 @@ import com.informix.jdbc.IfxDriver;
 
 public class java_sqli_HelloWorld {
 	
-	public static String SQLIURL;//= "jdbc:informix-sqli://184.173.63.222:9088/s8873642:INFORMIXSERVER=informix;USER=qkkamrhs;PASSWORD=xplswenfpqbe";
+	// To run locally, set the URL here
+	// For example: URL = "jdbc:informix-sqli://localhost:9088/testdb:INFORMIXSERVER=informix;USER=myuser;PASSWORD=mypassword";
+	public static String URL = "";
+		
+	// Service name for if credentials are parsed out of the Bluemix VCAP_SERVICES
+	public static String SERVICE_NAME = "timeseriesdatabase";
+	public static boolean USE_SSL = false;
+	
+	public static String tableName = "sqlitest3";
+	
 	public static List<String> everything = new ArrayList<String>();
 	
 	
 	public static void main(String[] args) {
     	
-//    	if (args[0] != null)
-//    		SQLIURL = args[0];
-//    	else
-//		parseVcap();
-    	
         doEverything();
         
-        //print log
-        for (String s : everything)
+        for (String s : everything) {
         	System.out.println(s);
+        }
         
     }
 
     public static List<String> doEverything() {
-        
-    	parseVcap();
-    	
+		everything.clear();
+
+        Connection connection = null;
         try {
+        	parseVcap();
         	
         	//initialize some variables
-        	String tableName = "sqlitest3";
         	String sql = "";
             PreparedStatement statement = null;
             Properties prop = new Properties();
-            Connection conn;
             //<------------------------------------->
             
             //connect to database
-            conn = new IfxDriver().connect(SQLIURL, prop);
-            if (conn != null)
-                everything.add("Connected to: " + SQLIURL);
+            connection = new IfxDriver().connect(URL, prop);
+            if (connection != null)
+                everything.add("Connected to: " + URL);
             //<------------------------------------->
             
             everything.add("\nTopics");
@@ -82,7 +85,7 @@ public class java_sqli_HelloWorld {
             everything.add("\n1 Create table");
             
             sql = "create table if not exists " + tableName + " (id varchar(255),  value integer)";
-            statement = conn.prepareStatement(sql);
+            statement = connection.prepareStatement(sql);
             statement.executeUpdate();
             
             everything.add("\tCreate a table named: " + tableName);
@@ -98,7 +101,7 @@ public class java_sqli_HelloWorld {
             
             DataFormat singleInsert = new DataFormat("TestId000", 4);
             sql = "insert into " + tableName + " values(?,?)";
-            statement = conn.prepareStatement(sql);
+            statement = connection.prepareStatement(sql);
             statement.setString(1, singleInsert.id);
             statement.setInt(2, singleInsert.value);
             statement.executeUpdate();
@@ -117,7 +120,7 @@ public class java_sqli_HelloWorld {
             listOfData.add(new DataFormat("TestId010", 2));
             listOfData.add(new DataFormat("TestId011", 3));
             sql = "insert into " + tableName + " values(?,?)";
-            statement = conn.prepareStatement(sql);
+            statement = connection.prepareStatement(sql);
             for (DataFormat data : listOfData) {
                 statement.setString(1, data.id);
                 statement.setInt(2, data.value);
@@ -140,7 +143,7 @@ public class java_sqli_HelloWorld {
             String nameToFind = "TestId000";
             List<DataFormat> dataWithName = new ArrayList<DataFormat>();
             sql = "select * from " + tableName + " where id LIKE '" + nameToFind.trim() + "'";
-            statement = conn.prepareStatement(sql);
+            statement = connection.prepareStatement(sql);
             ResultSet rs = statement.executeQuery();
             while (rs.next())
                 dataWithName.add(new DataFormat(rs.getString(1), rs.getInt(2)));
@@ -158,7 +161,7 @@ public class java_sqli_HelloWorld {
             String nameToFindAll = "TestId000";
             List<DataFormat> dataWithNameAll = new ArrayList<DataFormat>();
             sql = "select * from " + tableName + " where id LIKE '" + nameToFindAll.trim() + "'";
-            statement = conn.prepareStatement(sql);
+            statement = connection.prepareStatement(sql);
             ResultSet rsAll = statement.executeQuery();
             while (rsAll.next())
                 dataWithNameAll.add(new DataFormat(rsAll.getString(1), rsAll.getInt(2)));
@@ -176,7 +179,7 @@ public class java_sqli_HelloWorld {
             
             List<DataFormat> everythingInTable = new ArrayList<DataFormat>();
             sql = "select * from " + tableName;
-            statement = conn.prepareStatement(sql);
+            statement = connection.prepareStatement(sql);
             rs = statement.executeQuery();
             while (rs.next())
                 everythingInTable.add(new DataFormat(rs.getString(1), rs.getInt("value")));
@@ -195,7 +198,7 @@ public class java_sqli_HelloWorld {
             int updatedValue = 6;
             statement.close();
             sql = "update " + tableName + " set value = ? where id  = ?";
-            statement = conn.prepareStatement(sql);
+            statement = connection.prepareStatement(sql);
             statement.setInt(1, updatedValue);
             statement.setString(2, nameToUpdate);
             statement.executeUpdate();
@@ -210,7 +213,7 @@ public class java_sqli_HelloWorld {
             
             String nameToDelete = "TestId001";
             sql = "delete from " + tableName + " where id like '" + nameToDelete.trim() + "'";
-            statement = conn.prepareStatement(sql);
+            statement = connection.prepareStatement(sql);
             statement.executeUpdate();
             statement.close();
             
@@ -222,7 +225,7 @@ public class java_sqli_HelloWorld {
             everything.add("\n6 Drop a table");
             
             sql = "drop table " + tableName;
-            statement = conn.prepareStatement(sql);
+            statement = connection.prepareStatement(sql);
             statement.executeUpdate();
             statement.close();
             
@@ -234,31 +237,57 @@ public class java_sqli_HelloWorld {
             everything.add("\nComplete!");
 
         } catch (Exception e) {
-            System.err.println("[ERROR] "
+        	String errMessage = "[ERROR] "
                     + (e instanceof SQLException ? " Error Code : "
                             + ((SQLException) e).getErrorCode() : "")
-                    + " Message : " + e.getMessage());
+                    + " Message : " + e.getMessage();
+        	everything.add(errMessage);
+            System.err.println(errMessage);
             e.printStackTrace();
+        } finally {
+        	if (connection != null) {
+        		try {
+        			connection.close();
+        		} catch (SQLException e) {
+        			
+        		}
+        	}
         }
+        
         return everything;
     }
 
-	public static void parseVcap() {
+	public static void parseVcap() throws Exception {
 
-		String serviceName = "timeseriesdatabase";
-		StringReader stringReader = new StringReader(
-				System.getenv("VCAP_SERVICES"));
+		if (URL != null && !URL.equals("")) {
+			// If URL is already set, use it as is
+			return;
+		}
+ 
+		// Otherwise parse URL and credentials from VCAP_SERVICES
+		String serviceName = System.getenv("SERVICE_NAME");
+		if(serviceName == null || serviceName.length() == 0) {
+			serviceName = SERVICE_NAME;
+		}
+		String vcapServices = System.getenv("VCAP_SERVICES");
+		if (vcapServices == null) {
+			throw new Exception("VCAP_SERVICES not found in the environment"); 
+		}
+		StringReader stringReader = new StringReader(vcapServices);
 		JsonReader jsonReader = Json.createReader(stringReader);
 		JsonObject vcap = jsonReader.readObject();
 		System.out.println("vcap: " + vcap);
-		boolean ssl = false;
-		if (ssl)
-			SQLIURL = vcap.getJsonArray(serviceName).getJsonObject(0)
+		if (vcap.getJsonArray(serviceName) == null) {
+			throw new Exception("Service " + serviceName + " not found in VCAP_SERVICES");
+		}
+		if (USE_SSL) {
+			URL = vcap.getJsonArray(serviceName).getJsonObject(0)
 					.getJsonObject("credentials").getString("java_jdbc_url_ssl");
-		else
-			SQLIURL = vcap.getJsonArray(serviceName).getJsonObject(0)
+		} else {
+			URL = vcap.getJsonArray(serviceName).getJsonObject(0)
 					.getJsonObject("credentials").getString("java_jdbc_url");
-		System.out.println(SQLIURL);
+		}
+		System.out.println(URL);
 
 	}
 
